@@ -62,22 +62,33 @@ object Omit {
 object Rule {
 
   enum Issue:
-    case ParseError, SafeExit, Reset
+    case ParseError, SafeExit, Reset, Help
 
   val omitCommand = "omit ([a-z]+)".r
   val knownCommand = "known ([a-z]) ([1-5])".r
   val exactCommand = "exact ([a-z]) ([1-5])".r
   val exitCommand = "(exit|done|quit)".r
 
-  def apply(command: String): Either[Issue, Seq[Rule]] = {
+  def processCommand(command: String): Either[Issue, Seq[Rule]] = {
     command.toLowerCase match {
       case omitCommand(r) => Right(Omit(r))
       case knownCommand(l,p) => Right(List(Known(l.head, p.toInt - 1)))
       case exactCommand(l,p) => Right(List(Exact(l.head, p.toInt - 1)))
       case "clear" => Left(Issue.Reset)
+      case "help" => Left(Issue.Help)
       case exitCommand(_) => Left(Issue.SafeExit)
       case _ => Left(Issue.ParseError)
     }
+  }
+
+  def apply(command: String): Either[Issue, Seq[Rule]] = {
+    val foo: Seq[Either[Issue, Seq[Rule]]] = command
+      .split(";").toSeq
+      .map(_.trim().toLowerCase())
+      .map(processCommand)
+
+    val (lefts: Seq[Issue],rights: Seq[Seq[Rule]]) = foo.partitionMap(identity)
+    lefts.headOption.toLeft(rights.flatten)
   }
 }
 
