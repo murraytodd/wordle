@@ -25,7 +25,8 @@ object ConsoleApp extends ZIOAppDefault {
   val instructions = """The available commands are:
     |  exact pos letter - Indicates you know the letter is confirmed to be in position pos
     |  known pos letter - Indicates you know the letter is in the word, but NOT in position pos
-    |  omit letter(s) - None of the provided letters are in the word.
+    |  omit letter(s)   - None of the provided letters are in the word.
+    |  clear            - Reset and start a new search.
     |Note that multiple commands can be entered on the same line by separating them with a semicolon.
     |""".stripMargin
 
