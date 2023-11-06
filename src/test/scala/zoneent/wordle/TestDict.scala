@@ -14,8 +14,6 @@ val dictDataStream: ZStream[Any, Exception, String] =
     .via(ZPipeline.utfDecode)
     .via(ZPipeline.splitLines)
     .refineOrDie {
-      case e: Exception => e
-      case _: CompressionException => new Exception("Gunzip problem with source data")
       case e => new Exception("Unexpected read error, possible utf8 decoding? " + e.getMessage)
     }
 
