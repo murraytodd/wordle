@@ -1,14 +1,13 @@
 package zoneent.wordle
 
-import zio.*
-import zio.stream.*
-import java.io.IOException
+import zio._
+import zio.stream._
 
-final case class Dict(words: Set[String], frequencies: Map[Char, Double]) {
-  def applyRules(rules: Iterable[Rule]) = {
+final case class Dict(words: Set[String], frequencies: Map[Char, Double]):
+
+  def applyRules(rules: Iterable[Rule]) =
     val newWords = words.filter(word => rules.forall(rule => rule.test(word)))
     Dict(newWords, frequencies)
-  }
 
   def score(word: String): Double = word.toList.map(frequencies).sum
 
@@ -16,11 +15,10 @@ final case class Dict(words: Set[String], frequencies: Map[Char, Double]) {
 
   lazy val printall: String = words.map(w => (w, score(w))).toList.sortBy(- _._2)
     .map(t => printWord(t._1, t._2)).mkString("; ")
-}
 
-object Dict {
+object Dict:
 
-  def apply(data: Iterable[String]) = {
+  def apply(data: Iterable[String]) =
     val words = data
       .map(_.toLowerCase)
       .filter(w => (w.length == 5) && (w.forall(c => (c >= 'a') && (c <= 'z'))))
@@ -35,13 +33,10 @@ object Dict {
       .view.mapValues(_ * 100.0 / totalCount).toMap 
 
     new Dict(words, frequencies)   
-  }
 
-  def makeWordsLayer(wordStream: Stream[IOException, String]): Layer[IOException, Dict] = ZLayer.fromZIO {
+  def makeWordsLayer(wordStream: Stream[Exception, String]): Layer[Exception, Dict] = ZLayer.fromZIO (
     {
       wordStream.map(_.toLowerCase).filter(_.matches("[a-z]{5}")) 
         >>> ZSink.collectAllToSet
     }.map{words => Dict(words)}
-  }
-
-}
+  )

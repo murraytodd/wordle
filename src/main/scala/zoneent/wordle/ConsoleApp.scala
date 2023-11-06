@@ -17,9 +17,8 @@ object ConsoleApp extends ZIOAppDefault {
 
   // val dictURL = "https://www-personal.umich.edu/~jlawler/wordlist"
 
-  val dictStream: Stream[IOException, String] = 
-    ZStream.fromResource("words.txt").via(ZPipeline.utf8Decode >>> ZPipeline.splitLines)
-  
+  val dictStream: Stream[Exception, String] = 
+    ZStream.fromResource("words.txt.gz").via(ZPipeline.gunzip(64 * 1024) >>> ZPipeline.utf8Decode >>> ZPipeline.splitLines)
   val dictLayer = Dict.makeWordsLayer(dictStream)
 
   val instructions = """The available commands are:

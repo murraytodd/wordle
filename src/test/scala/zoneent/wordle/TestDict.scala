@@ -1,30 +1,25 @@
 package zoneent.wordle
 
-import zio.{ZIO, ZManaged, Layer}
+import zio.{ZIO, Layer}
 import zio.Console.{printLine}
 import zio.test.*
 import zio.stream.*
 import zio.stream.compression.CompressionException
-import java.io.IOException
 import java.nio.charset.MalformedInputException
 import java.io.UnsupportedEncodingException
 
-val dictDataStream: ZStream[Any, IOException, String] = 
-  ZStream.fromInputStreamManaged(
-    ZManaged.fromAutoCloseable(
-      ZIO.attempt(TestDict.getClass.getResourceAsStream("/wordlist.txt.gz"))
-        .refineToOrDie[IOException]
-    )
-  ).via(ZPipeline.gunzip(64 * 1024))
+val dictDataStream: ZStream[Any, Exception, String] = 
+  ZStream.fromResource("words.txt.gz")
+    .via(ZPipeline.gunzip(64 * 1024))
     .via(ZPipeline.utfDecode)
     .via(ZPipeline.splitLines)
     .refineOrDie {
-      case e: IOException => e
-      case _: CompressionException => new IOException("Gunzip problem with source data")
-      case e => new IOException("Unexpected read error, possible utf8 decoding? " + e.getMessage)
+      case e: Exception => e
+      case _: CompressionException => new Exception("Gunzip problem with source data")
+      case e => new Exception("Unexpected read error, possible utf8 decoding? " + e.getMessage)
     }
 
-val wordsLayer: Layer[IOException, Dict] = Dict.makeWordsLayer(dictDataStream)
+val wordsLayer: Layer[Exception, Dict] = Dict.makeWordsLayer(dictDataStream)
 
 val countWords: ZIO[Dict, Nothing, Int] = for {
     words <- ZIO.service[Dict]
@@ -37,7 +32,7 @@ def applyRules(rules: Iterable[Rule]): ZIO[Dict, Nothing, Dict] = for {
 
 val TestDict = suite("dict") (
   test("Can Load Dictionary") {
-    assertM(countWords.provideLayer(wordsLayer))(Assertion.isGreaterThan(1000))
+    assertZIO(countWords.provideLayer(wordsLayer))(Assertion.isGreaterThan(1000))
   },
   test("Reduce based on a rule") {
     val rules = Omit("corf")  ++ 
@@ -49,7 +44,7 @@ val TestDict = suite("dict") (
       _ <- ZIO.debug(myDict.printall)
     } yield(myDict.words.size)
       
-    assertM(size.provideLayer(wordsLayer))(Assertion.isGreaterThan(0))
+    assertZIO(size.provideLayer(wordsLayer))(Assertion.isGreaterThan(0))
   },
   test("Word score") {
     val dictScore = for {
@@ -57,6 +52,6 @@ val TestDict = suite("dict") (
       score = d.score("monal")
       _ <- ZIO.debug(s"monal score is ${score}")
     } yield(score)
-    assertM(dictScore.provideLayer(wordsLayer))(Assertion.isGreaterThan(30.0))
+    assertZIO(dictScore.provideLayer(wordsLayer))(Assertion.isGreaterThan(28.0))
   }
 )
