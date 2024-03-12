@@ -19,13 +19,18 @@ object ConsoleApp extends ZIOAppDefault {
 
   val dictStream: Stream[Exception, String] = 
     ZStream.fromResource("words.txt.gz").via(ZPipeline.gunzip(64 * 1024) >>> ZPipeline.utf8Decode >>> ZPipeline.splitLines)
+  
+  val usedWords = RockPaperShotgun.parseZIO
+
   val dictLayer = Dict.makeWordsLayer(dictStream)
 
   val instructions = """The available commands are:
     |  exact pos letter - Indicates you know the letter is confirmed to be in position pos
     |  known pos letter - Indicates you know the letter is in the word, but NOT in position pos
-    |  omit letter(s)   - None of the provided letters are in the word.
-    |  clear            - Reset and start a new search.
+    |  omit letter(s)   - None of the provided letters are in the word
+    |  multiple letter  - The letter occurs in the word more than once
+    |  clear            - Reset and start a new search
+    |  help             - This help information
     |Note that multiple commands can be entered on the same line by separating them with a semicolon.
     |""".stripMargin
 

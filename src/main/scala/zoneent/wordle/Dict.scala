@@ -9,6 +9,8 @@ final case class Dict(words: Set[String], frequencies: Map[Char, Double]):
     val newWords = words.filter(word => rules.forall(rule => rule.test(word)))
     Dict(newWords, frequencies)
 
+  def removedUsed(used: Set[String]) = Dict(words -- used, frequencies)
+
   def score(word: String): Double = word.toList.map(frequencies).sum
 
   def printWord(w: String, s: Double): String = f"${w}: ${s}%2.2f"
@@ -34,9 +36,20 @@ object Dict:
 
     new Dict(words, frequencies)   
 
+  /**
+    * Create the dictionary by loading the known usable words from cache, loading the known 
+    * already-used-words from the web, and applying a difference
+    *
+    * @param wordStream Data stream with all the usable words
+    * @return
+    */
   def makeWordsLayer(wordStream: Stream[Exception, String]): Layer[Exception, Dict] = ZLayer.fromZIO (
     {
-      wordStream.map(_.toLowerCase).filter(_.matches("[a-z]{5}")) 
-        >>> ZSink.collectAllToSet
+      for {
+        zWords <- wordStream.map(_.toLowerCase).filter(_.matches("[a-z]{5}")) >>> ZSink.collectAllToSet
+        zUsed  <- RockPaperShotgun.parseZIO
+          .orElse(ZIO.logError("Couldn't load used list from web. Attempting backup.") *> RockPaperShotgun.parseBackup)
+          .orElse(ZIO.logError("Couldn't load backup. We won't filter out already used words.") *> ZIO.succeed(Set.empty[String]))
+      } yield (zWords -- zUsed)
     }.map{words => Dict(words)}
   )

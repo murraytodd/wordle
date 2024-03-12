@@ -33,8 +33,8 @@ val TestDict = suite("dict") (
     assertZIO(countWords.provideLayer(wordsLayer))(Assertion.isGreaterThan(1000))
   },
   test("Reduce based on a rule") {
-    val rules = Omit("corf")  ++ 
-      List(Exact('a', 1), Exact('y', 4), Known('n', 2, 4))
+    val rules = Omit("ro")  ++ 
+      List(Exact('a', 1), Known('n', 2, 4))
 
     val available = applyRules(rules).provideLayer(wordsLayer)
     val size = for {

@@ -1,6 +1,7 @@
 package zoneent.wordle
 
 import scala.util.{Try,Success}
+import java.nio.file.DirectoryStream.Filter
 
 sealed trait Rule {
   def test(word: String): Boolean
@@ -51,6 +52,10 @@ final case class Known(letter: Char, antiPos: Int *) extends Rule {
   }
 }
 
+final case class Multiple(letter: Char) extends Rule {
+  override def test(word: String): Boolean = word.filter(_ == letter).size > 1
+}
+
 final case class Omit(letter: Char) extends Rule {
   override def test(word: String): Boolean = word.find(_ == letter).isEmpty
 }
@@ -67,6 +72,7 @@ object Rule {
   val omitCommand = "omit ([a-z]+)".r
   val knownCommand = "known ([a-z]) ([1-5])".r
   val exactCommand = "exact ([a-z]) ([1-5])".r
+  val multipleCommand = "multiple ([a-z])".r
   val exitCommand = "(exit|done|quit)".r
 
   def processCommand(command: String): Either[Issue, Seq[Rule]] = {
@@ -74,6 +80,7 @@ object Rule {
       case omitCommand(r) => Right(Omit(r))
       case knownCommand(l,p) => Right(List(Known(l.head, p.toInt - 1)))
       case exactCommand(l,p) => Right(List(Exact(l.head, p.toInt - 1)))
+      case multipleCommand(l) => Right(List(Multiple(l.head)))
       case "clear" => Left(Issue.Reset)
       case "help" => Left(Issue.Help)
       case exitCommand(_) => Left(Issue.SafeExit)
