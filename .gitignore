@@ -7,3 +7,4 @@ project/project
 .idea
 .metals
 .bsp
+*.log

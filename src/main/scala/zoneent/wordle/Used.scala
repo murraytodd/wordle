@@ -20,7 +20,7 @@ trait UsedLoader {
   def zLoader: ZIO[Any, Exception, Set[String]] = {
     val prestaged = prescanningProcess(source) // prescan if needed
     val processSink = ZSink.collectAllUntil[String](scanningEnded)
-    prestaged.run(processSink).map(_.map(transformLine).toSet)
+    prestaged.run(processSink).map(_.dropRight(1).map(transformLine).toSet)
   }
 }
 
