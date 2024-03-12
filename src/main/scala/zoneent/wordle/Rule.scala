@@ -15,6 +15,7 @@ object RuleSet {
           case k: Known if k.letter != eChar => k
           case e: Exact => e
           case o: Omit => o
+          case m: Multiple => m
         }
       case Known(kChar, kPos*) => {
         val existingKnown: Option[Known] = rules.collectFirst {
