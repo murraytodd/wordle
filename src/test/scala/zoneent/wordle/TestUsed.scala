@@ -22,5 +22,9 @@ val TestUsed = suite("used") (
   test("Loader with bad URI fails safely") {
     val loader = RPSGLoader(new URI("https://nonexistiant.url.blah")).zLoader
     assertZIO(loader.isFailure)(isTrue)
+  },
+  test("Five Forks Loader works") {
+    val loader = FiveForksLoader().zLoader
+    assertZIO(loader)(isNonEmpty) && assertZIO(loader.map(_.size))(isGreaterThan(900))
   }
 )

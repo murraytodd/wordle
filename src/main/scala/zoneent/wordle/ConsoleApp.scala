@@ -19,8 +19,6 @@ object ConsoleApp extends ZIOAppDefault {
 
   val dictStream: Stream[Exception, String] = 
     ZStream.fromResource("words.txt.gz").via(ZPipeline.gunzip(64 * 1024) >>> ZPipeline.utf8Decode >>> ZPipeline.splitLines)
-  
-  val usedWords = RockPaperShotgun.parseZIO
 
   val dictLayer = Dict.makeWordsLayer(dictStream)
 
@@ -59,5 +57,5 @@ object ConsoleApp extends ZIOAppDefault {
   }.provideSomeLayer(dictLayer)
     .catchSome { case Issue.SafeExit => printLine("Thanks for playing!") *> ZIO.succeed(()) }
     
-
+  
 }

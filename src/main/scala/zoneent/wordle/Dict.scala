@@ -47,8 +47,8 @@ object Dict:
     {
       for {
         zWords <- wordStream.map(_.toLowerCase).filter(_.matches("[a-z]{5}")) >>> ZSink.collectAllToSet
-        zUsed  <- RockPaperShotgun.parseZIO
-          .orElse(ZIO.logError("Couldn't load used list from web. Attempting backup.") *> RockPaperShotgun.parseBackup)
+        zUsed  <- RPSGLoader().zLoader
+          .orElse(ZIO.logError("Couldn't load used list from web. Attempting backup.") *> UsedBackupLoader().zLoader)
           .orElse(ZIO.logError("Couldn't load backup. We won't filter out already used words.") *> ZIO.succeed(Set.empty[String]))
       } yield (zWords -- zUsed)
     }.map{words => Dict(words)}
